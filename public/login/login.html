@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log In</title>
+</head>
+<body>
+
+    <div>
+        <h2>Log In</h2>
+
+        <div id="message-area" style="color:red;"></div>
+
+        <form id="login-form">
+            <div>
+                <label for="login-identifier">Email or Phone Number</label><br>
+                <input type="text" id="login-identifier" name="identifier" required>
+            </div>
+            <br>
+            <div>
+                <label for="login-password">Password</label><br>
+                <input type="password" id="login-password" name="password" required>
+            </div>
+            <br>
+            <button type="submit">Log In</button>
+        </form>
+        <br>
+        <div>
+            <p>Don't have an account? <a href="signup.html">Sign Up</a></p>
+        </div>
+    </div>
+
+    <script src="login.js"></script>
+</body>
+</html>
