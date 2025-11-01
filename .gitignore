@@ -1,0 +1,15 @@
+# Node.js dependencies
+# This folder can be huge and should never be pushed
+/node_modules
+
+# Environment variables
+# This file contains your secret passwords!
+.env
+
+# Log files
+*.log
+npm-debug.log*
+
+# OS-specific files
+.DS_Store
+Thumbs.db
