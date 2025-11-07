@@ -1,35 +1,35 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Log In</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Log In</title>
 </head>
 <body>
 
+  <div>
+    <h2>Log In</h2>
+
+    <form id="loginForm">
+      <div>
+        <label for="loginIdentifier">Email or Phone Number</label><br>
+        <input type="text" id="loginIdentifier" name="identifier" required>
+      </div>
+      <br>
+      <div>
+        <label for="loginPassword">Password</label><br>
+        <input type="password" id="loginPassword" name="password" required>
+      </div>
+      <br>
+      <button type="submit">Log In</button>
+    </form>
+    <br>
     <div>
-        <h2>Log In</h2>
-
-        <form id="login-form">
-            <div>
-                <label for="login-identifier">Email or Phone Number</label><br>
-                <input type="text" id="login-identifier" name="identifier" required>
-            </div>
-            <br>
-            <div>
-                <label for="login-password">Password</label><br>
-                <input type="password" id="login-password" name="password" required>
-            </div>
-            <br>
-            <button type="submit">Log In</button>
-        </form>
-        <br>
-        <div>
-            <p>Don't have an account? <a href="signup.html">Sign Up</a></p>
-        </div>
+      <p>Don't have an account? <a href="signup.html">Sign Up</a></p>
     </div>
+  </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <script src="JS/login.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="JS/login.js"></script>
 </body>
 </html>

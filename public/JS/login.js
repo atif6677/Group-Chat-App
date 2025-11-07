@@ -1,22 +1,29 @@
-document.getElementById('login-form').addEventListener('submit', async e => {
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
   e.preventDefault();
 
-  const id = document.getElementById('login-identifier'),
-        pw = document.getElementById('login-password'),
-        identifier = id.value.trim(),
-        password = pw.value,
-        valid = /^\S+@\S+\.\S+$/.test(identifier) || /^\d{10,}$/.test(identifier);
+  const identifierInput = document.getElementById('loginIdentifier').value.trim();
+  const passwordInput = document.getElementById('loginPassword').value;
 
-  if (!valid || !password) return console.error('Enter valid email/phone and password');
+  const loginData = {
+    identifier: identifierInput,
+    password: passwordInput
+  };
+
+  if (!identifierInput || !passwordInput) {
+    return console.error('Both fields are required');
+  }
 
   try {
-    const res = await axios.post('/login', { identifier, password });
+    const res = await axios.post('/login', loginData);
+
     if (res.status === 200 && res.data.token) {
-      console.log('Login successful!');
+      console.log('✅ Login successful!');
       e.target.reset();
       localStorage.setItem('token', res.data.token);
       setTimeout(() => (location.href = 'dashboard.html'), 1500);
-    } else console.error('Login failed');
+    } else {
+      console.error('Login failed. Invalid credentials.');
+    }
   } catch (err) {
     console.error(err.response?.data?.error || 'Login failed');
   }

@@ -18,24 +18,27 @@ const loginUser = async (req, res) => {
     // Find user by email OR phone
     const user = await User.findOne({
       where: {
-        [Op.or]: [{ email: identifier }, { phoneNumber: identifier }],
+        [Op.or]: [{ email: identifier }, { phone: identifier }], // fixed
       },
     });
 
-    if (!user) return res.status(400).json({ error: "Invalid credentials" });
+    if (!user)
+      return res.status(400).json({ error: "Invalid credentials" });
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ error: "Invalid credentials" });
+    if (!isMatch)
+      return res.status(400).json({ error: "Invalid credentials" });
 
     const token = jwt.sign(
-      { userId: user.id, email: user.email, phoneNumber: user.phoneNumber },
+      { userId: user.id, email: user.email, phone: user.phone },
       JWT_SECRET,
       { expiresIn: "1h" }
     );
 
     res.status(200).json({ message: "Login successful", token });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("Login error:", error);
+    res.status(500).json({ error: "Server error. Please try again later." });
   }
 };
 
