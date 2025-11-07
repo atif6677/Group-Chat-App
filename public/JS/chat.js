@@ -1,7 +1,10 @@
 console.log("✅ chat.js loaded successfully");
 
 const apiBase = "http://localhost:3000/api";
-const currentUserId = localStorage.getItem('userId') || 1;
+
+const currentUserId = localStorage.getItem('userId');
+const currentUserName = localStorage.getItem('userName') || "You";
+
 
 const messagesEl = document.getElementById('chatMessages');
 const formEl = document.getElementById('chatForm');
@@ -40,7 +43,7 @@ function appendMessage({ userId, name, text, ts }) {
 // === Load existing messages from DB ===
 async function loadMessages() {
   try {
-    const res = await axios.get(`${apiBase}/messages`);
+    const res = await axios.get(`${apiBase}/messages`); // ✅ FIXED (no double /api)
     const allMessages = res.data.messages.map((msg) => ({
       id: msg.id,
       userId: msg.userId,
@@ -48,12 +51,33 @@ async function loadMessages() {
       text: msg.message,
       ts: new Date(msg.createdAt).getTime(),
     }));
+    messagesEl.innerHTML = ""; // clear first
     allMessages.forEach((m) => appendMessage(m));
   } catch (err) {
     console.error("❌ Error fetching messages:", err);
   }
 }
 loadMessages();
+
+// 🔁 Fetch new messages every 3 seconds
+setInterval(async () => {
+  try {
+    const res = await axios.get(`${apiBase}/messages`); // ✅ FIXED here too
+    const newMessages = res.data.messages.map((msg) => ({
+      id: msg.id,
+      userId: msg.userId,
+      name: msg.User?.name || "User",
+      text: msg.message,
+      ts: new Date(msg.createdAt).getTime(),
+    }));
+
+    // Clear and re-render
+    messagesEl.innerHTML = "";
+    newMessages.forEach((m) => appendMessage(m));
+  } catch (err) {
+    console.error("❌ Auto-refresh failed:", err);
+  }
+}, 3000); // every 3 seconds
 
 // === Handle new message submission ===
 formEl.addEventListener('submit', async (e) => {
@@ -68,13 +92,14 @@ formEl.addEventListener('submit', async (e) => {
       message: text,
     });
 
-    // Show instantly on screen
+    // Show instantly
     appendMessage({
-      userId: currentUserId,
-      name: "You",
-      text,
-      ts: Date.now(),
-    });
+  userId: currentUserId,
+  name: currentUserName,
+  text,
+  ts: Date.now(),
+});
+
 
     // Reset input
     inputEl.value = "";

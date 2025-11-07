@@ -19,7 +19,12 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
     if (res.status === 200 && res.data.token) {
       console.log('✅ Login successful!');
       e.target.reset();
+
+      // ✅ Save token, userId, and user name
       localStorage.setItem('token', res.data.token);
+      localStorage.setItem('userId', res.data.userId);
+      localStorage.setItem('userName', res.data.name);
+
       setTimeout(() => (location.href = 'chat.html'), 1500);
     } else {
       console.error('Login failed. Invalid credentials.');

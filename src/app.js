@@ -33,6 +33,7 @@ app.get("/", (req, res) => {
 const PORT = process.env.PORT || 3000;
 
 db.sync()
+
   .then(() => {
     console.log("✅ Database synced successfully");
     app.listen(PORT, () =>
