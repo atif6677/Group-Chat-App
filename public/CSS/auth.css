@@ -1,0 +1,113 @@
+/* ======== General ======== */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: "Poppins", system-ui, sans-serif;
+}
+
+body {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 20% 20%, #1b2230, #0d111a);
+  color: #f0f4ff;
+}
+
+/* ======== Card Container ======== */
+.auth-container {
+  background: rgba(25, 30, 45, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  padding: 40px 45px;
+  width: 100%;
+  max-width: 380px;
+  text-align: center;
+  backdrop-filter: blur(12px);
+}
+
+/* ======== Headings ======== */
+.auth-container h2 {
+  font-size: 1.6rem;
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: #cfe0ff;
+}
+
+/* ======== Labels + Inputs ======== */
+.auth-container label {
+  display: block;
+  text-align: left;
+  font-size: 0.9rem;
+  margin-bottom: 6px;
+  color: #b3bcd6;
+}
+
+.auth-container input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #2a354a;
+  background: #111726;
+  color: #f0f4ff;
+  font-size: 0.95rem;
+  transition: border-color 0.2s ease;
+}
+
+.auth-container input:focus {
+  outline: none;
+  border-color: #3c73ff;
+  background: #121a2b;
+}
+
+/* ======== Buttons ======== */
+.auth-container button {
+  width: 100%;
+  padding: 10px;
+  margin-top: 10px;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #3c73ff, #0056f7);
+  color: white;
+  font-weight: 500;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: transform 0.1s ease, opacity 0.2s ease;
+}
+
+.auth-container button:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.auth-container button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ======== Links ======== */
+.auth-container a {
+  color: #70a1ff;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.auth-container a:hover {
+  color: #a0c4ff;
+}
+
+.auth-container p {
+  margin-top: 15px;
+  font-size: 0.9rem;
+  color: #b4bdd4;
+}
+
+/* ======== Responsiveness ======== */
+@media (max-width: 500px) {
+  .auth-container {
+    padding: 30px 25px;
+    max-width: 90%;
+  }
+}

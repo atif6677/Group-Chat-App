@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Chat Window</title>
+  <link rel="stylesheet" href="CSS/chat.css" />
+</head>
+<body>
+  <div class="chat">
+    <header class="chat__header">
+      <div class="chat__room">
+        <div class="chat__avatar">GC</div>
+        <div>
+          <div class="chat__title">Group Chat</div>
+          <div class="chat__subtitle">12 members • online now</div>
+        </div>
+      </div>
+    </header>
+
+    <main class="chat__messages" id="chatMessages" aria-live="polite"></main>
+
+    <div class="chat__new-indicator" id="newIndicator" hidden>
+      New messages • <button id="jumpToBottom" class="btn-link">Jump</button>
+    </div>
+
+    <footer class="chat__composer">
+      <form id="chatForm" autocomplete="off">
+        <textarea id="chatInput" rows="1" placeholder="Type a message"
+                  aria-label="Message"></textarea>
+        <button id="sendBtn" type="submit" disabled>Send</button>
+      </form>
+    </footer>
+  </div>
+
+  <script type="module" src="JS/chat.js"></script>
+</body>
+</html>

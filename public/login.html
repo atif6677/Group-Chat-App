@@ -1,32 +1,30 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Log In</title>
+  <link rel="stylesheet" href="CSS/auth.css" />
 </head>
 <body>
-
-  <div>
+  <div class="auth-container">
     <h2>Log In</h2>
 
     <form id="loginForm">
       <div>
-        <label for="loginIdentifier">Email or Phone Number</label><br>
-        <input type="text" id="loginIdentifier" name="identifier" required>
+        <label for="loginIdentifier">Email or Phone Number</label>
+        <input type="text" id="loginIdentifier" name="identifier" required />
       </div>
-      <br>
+      <br />
       <div>
-        <label for="loginPassword">Password</label><br>
-        <input type="password" id="loginPassword" name="password" required>
+        <label for="loginPassword">Password</label>
+        <input type="password" id="loginPassword" name="password" required />
       </div>
-      <br>
+      <br />
       <button type="submit">Log In</button>
     </form>
-    <br>
-    <div>
-      <p>Don't have an account? <a href="signup.html">Sign Up</a></p>
-    </div>
+
+    <p>Don't have an account? <a href="signup.html">Sign Up</a></p>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>

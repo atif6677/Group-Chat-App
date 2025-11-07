@@ -20,7 +20,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
       console.log('✅ Login successful!');
       e.target.reset();
       localStorage.setItem('token', res.data.token);
-      setTimeout(() => (location.href = 'dashboard.html'), 1500);
+      setTimeout(() => (location.href = 'chat.html'), 1500);
     } else {
       console.error('Login failed. Invalid credentials.');
     }
