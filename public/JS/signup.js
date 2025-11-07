@@ -21,7 +21,7 @@ document.getElementById('signupForm').addEventListener('submit', async (e) => {
   }
 
   try {
-    const res = await axios.post('/signup', userData);
+    const res = await axios.post('/api/signup', userData);
 
     if (res.status === 201) {
       console.log('Signup successful!');

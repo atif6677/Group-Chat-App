@@ -55,10 +55,18 @@ body{
 }
 
 .chat__new-indicator{
-  position:absolute; left:50%; transform:translateX(-50%);
-  bottom:72px; background:#0f141f; border:1px solid var(--border);
-  color:var(--muted); padding:6px 10px; border-radius:999px; box-shadow:var(--shadow);
+  position:absolute;
+  left:50%;
+  transform:translateX(-50%);
+  bottom:72px;
+  background:#0f141f;
+  border:1px solid var(--border);
+  color:var(--muted);
+  padding:6px 10px;
+  border-radius:999px;
+  box-shadow:var(--shadow);
 }
+
 
 .btn-link{
   background:none; border:none; color:var(--accent); cursor:pointer; padding:0 0 0 6px;
@@ -79,6 +87,12 @@ body{
   background:#2b63ff22; color:#cfe0ff; cursor:pointer;
 }
 #sendBtn:disabled{ opacity:.5; cursor:not-allowed }
+
+.chat__new-indicator {
+  pointer-events: none;
+  z-index: 2;
+}
+
 
 /* mobile tweaks */
 @media (max-width:520px){

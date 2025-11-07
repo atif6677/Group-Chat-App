@@ -14,7 +14,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
   }
 
   try {
-    const res = await axios.post('/login', loginData);
+    const res = await axios.post('/api/login', loginData);
 
     if (res.status === 200 && res.data.token) {
       console.log('✅ Login successful!');
