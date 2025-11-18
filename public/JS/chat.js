@@ -1,17 +1,18 @@
 console.log("✅ chat.js loaded successfully");
 
-const apiBase = "http://localhost:3000/api";
+// 1. Initialize Socket.io
+const socket = io(); 
 
+const apiBase = "http://localhost:3000/api";
 const currentUserId = localStorage.getItem('userId');
 const currentUserName = localStorage.getItem('userName') || "You";
-
 
 const messagesEl = document.getElementById('chatMessages');
 const formEl = document.getElementById('chatForm');
 const inputEl = document.getElementById('chatInput');
 const sendBtnEl = document.getElementById('sendBtn');
 
-// === Enable/Disable Send button when typing ===
+// === Enable/Disable Send button ===
 inputEl.addEventListener('input', () => {
   const hasText = inputEl.value.trim().length > 0;
   sendBtnEl.disabled = !hasText;
@@ -40,10 +41,10 @@ function appendMessage({ userId, name, text, ts }) {
   messagesEl.scrollTop = messagesEl.scrollHeight;
 }
 
-// === Load existing messages from DB ===
+// === Load existing messages from DB (Run once on load) ===
 async function loadMessages() {
   try {
-    const res = await axios.get(`${apiBase}/messages`); // ✅ FIXED (no double /api)
+    const res = await axios.get(`${apiBase}/messages`);
     const allMessages = res.data.messages.map((msg) => ({
       id: msg.id,
       userId: msg.userId,
@@ -51,7 +52,7 @@ async function loadMessages() {
       text: msg.message,
       ts: new Date(msg.createdAt).getTime(),
     }));
-    messagesEl.innerHTML = ""; // clear first
+    messagesEl.innerHTML = ""; 
     allMessages.forEach((m) => appendMessage(m));
   } catch (err) {
     console.error("❌ Error fetching messages:", err);
@@ -59,25 +60,11 @@ async function loadMessages() {
 }
 loadMessages();
 
-// 🔁 Fetch new messages every 3 seconds
-setInterval(async () => {
-  try {
-    const res = await axios.get(`${apiBase}/messages`); // ✅ FIXED here too
-    const newMessages = res.data.messages.map((msg) => ({
-      id: msg.id,
-      userId: msg.userId,
-      name: msg.User?.name || "User",
-      text: msg.message,
-      ts: new Date(msg.createdAt).getTime(),
-    }));
-
-    // Clear and re-render
-    messagesEl.innerHTML = "";
-    newMessages.forEach((m) => appendMessage(m));
-  } catch (err) {
-    console.error("❌ Auto-refresh failed:", err);
-  }
-}, 3000); // every 3 seconds
+// 2. LISTEN for new messages via Socket.io (Replaces setInterval)
+socket.on("message", (msg) => {
+    // Append the message received from the server
+    appendMessage(msg);
+});
 
 // === Handle new message submission ===
 formEl.addEventListener('submit', async (e) => {
@@ -86,21 +73,16 @@ formEl.addEventListener('submit', async (e) => {
   if (!text) return;
 
   try {
-    // Send message to backend
+    // Send message to backend via API
     await axios.post(`${apiBase}/messages`, {
       userId: currentUserId,
       message: text,
     });
 
-    // Show instantly
-    appendMessage({
-  userId: currentUserId,
-  name: currentUserName,
-  text,
-  ts: Date.now(),
-});
-
-
+    // NOTE: We do NOT manually appendMessage() here anymore.
+    // The server will receive the POST, save it, and EMIT the socket event.
+    // The socket.on('message') listener above will handle displaying it.
+    
     // Reset input
     inputEl.value = "";
     sendBtnEl.disabled = true;
