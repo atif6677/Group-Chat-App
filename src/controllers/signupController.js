@@ -3,7 +3,7 @@ const User = require("../models/signupModel");
 const bcrypt = require("bcrypt");
 const { Op } = require("sequelize");
 
-const addUserSignup = async (req, res) => {
+exports.addUserSignup = async (req, res) => {
   try {
     const { name, email, phone, password } = req.body;
 
@@ -12,9 +12,7 @@ const addUserSignup = async (req, res) => {
     }
 
     const existingUser = await User.findOne({
-      where: {
-        [Op.or]: [{ email }, { phone }],
-      },
+      where: { [Op.or]: [{ email }, { phone }] },
     });
 
     if (existingUser) {
@@ -29,25 +27,16 @@ const addUserSignup = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await User.create({
-      name,
-      email,
-      phone,
-      password: hashedPassword,
+      name, email, phone, password: hashedPassword,
     });
 
-    return res.status(201).json({
+    res.status(201).json({
       message: "New user added successfully",
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-      },
+      user: { id: user.id, name: user.name, email: user.email, phone: user.phone },
     });
+
   } catch (error) {
     console.error("Signup error:", error);
-    return res.status(500).json({ error: "Server error. Please try again later." });
+    res.status(500).json({ error: "Server error. Please try again later." });
   }
 };
-
-module.exports = addUserSignup;

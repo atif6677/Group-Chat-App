@@ -1,9 +1,11 @@
 // src/routes/messageRoute.js
+
 const express = require("express");
 const router = express.Router();
-const messageController = require("../controllers/messageController");
+const msg = require("../controllers/messageController");
 
-router.post("/messages", messageController.addMessage);
-router.get("/messages", messageController.getAllMessages);
+router.post("/messages", msg.addMessage);
+router.get("/messages", msg.getAllMessages);
 
-module.exports = router;
+exports.router = router;
+
