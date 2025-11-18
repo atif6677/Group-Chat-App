@@ -1,7 +1,16 @@
 console.log("✅ chat.js loaded successfully");
 
-// 1. Initialize Socket.io
-const socket = io(); 
+// 1. Get the token from local storage (saved during login)
+const token = localStorage.getItem("token"); 
+
+// 2. Initialize Socket.io with the token in the 'auth' object
+const socket = io(window.location.origin, {
+    auth: {
+        token: token // This sends the token to the backend during the handshake
+    }
+});
+
+
 
 const apiBase = "http://localhost:3000/api";
 const currentUserId = localStorage.getItem('userId');

@@ -4,63 +4,88 @@ require("dotenv").config();
 const express = require("express");
 const path = require("path");
 const cors = require("cors");
-const db = require("./utils/database");
-
-// 1. Import http and socket.io
 const http = require("http");
 const { Server } = require("socket.io");
+const jwt = require("jsonwebtoken"); // 💡 Import JWT
+const User = require("./models/signupModel"); // 💡 Import User Model
+const db = require("./utils/database");
 
 const app = express();
 
-// 2. Create the HTTP server and Socket.io instance
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "*", // Allow connection from any origin (adjust for production)
+    origin: "*",
   },
 });
 
-// Import Routes
-const signupRoutes = require("./routes/signupRoute");
-const loginRoutes = require("./routes/loginRoute");
-const messageRoutes = require("./routes/messageRoute");
-
-// Middleware
+// ... (Existing Express Middleware & Routes) ...
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "../public")));
 
-// 3. Middleware to make 'io' available in controllers
+// 🛑 SOCKET.IO AUTH MIDDLEWARE (Add this BEFORE io.on connection)
+io.use(async (socket, next) => {
+    try {
+        // 1. Extract token from the handshake
+        const token = socket.handshake.auth.token;
+        
+        if (!token) {
+            return next(new Error("Authentication error: No token provided"));
+        }
+
+        // 2. Verify the token (Make sure 'secretkey' matches what you used in loginRoute)
+        // Ideally use: process.env.JWT_SECRET
+        const decoded = jwt.verify(token, "secretkey"); 
+
+        // 3. Find the user in the DB (Optional but recommended for safety)
+        const user = await User.findByPk(decoded.userId);
+        if (!user) {
+            return next(new Error("Authentication error: User not found"));
+        }
+
+        // 4. Attach user info to the socket instance
+        // Now you can access socket.user.id or socket.user.name in any event!
+        socket.user = user; 
+        
+        next(); // Allow connection
+    } catch (err) {
+        console.error("Socket Auth Error:", err.message);
+        next(new Error("Authentication error: Invalid token"));
+    }
+});
+
+// ... (Existing Routes) ...
+const signupRoutes = require("./routes/signupRoute");
+const loginRoutes = require("./routes/loginRoute");
+const messageRoutes = require("./routes/messageRoute");
+
+// Attach io to request for API routes
 app.use((req, res, next) => {
   req.io = io;
   next();
 });
 
-// API Routes
 app.use("/api", signupRoutes);
 app.use("/api", loginRoutes);
 app.use("/api", messageRoutes);
 
-// Root route
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "../public/signup.html"));
-});
+// ... (Root route) ...
 
-// 4. Socket.io Connection Event (Optional: for logging)
+// ✅ UPDATED CONNECTION HANDLER
 io.on("connection", (socket) => {
-  console.log("A user connected:", socket.id);
+  // Now we know EXACTLY who this is
+  console.log(`✅ User connected: ${socket.user.name} (ID: ${socket.user.id})`);
+
   socket.on("disconnect", () => {
-    console.log("User disconnected");
+    console.log(`❌ User disconnected: ${socket.user.name}`);
   });
 });
 
-// Sync DB and start server
+// ... (DB Sync and Server Listen) ...
 const PORT = process.env.PORT || 3000;
-
 db.sync()
   .then(() => {
-    console.log("✅ Database synced successfully");
-    // 5. CHANGE: Listen using 'server', not 'app'
     server.listen(PORT, () =>
       console.log(`🚀 Server running on http://localhost:${PORT}/signup.html`)
     );
