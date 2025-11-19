@@ -14,6 +14,11 @@ const signupRoute = require("./routes/signupRoute").router;
 const loginRoute = require("./routes/loginRoute").router;
 const messageRoute = require("./routes/messageRoute").router;
 const userRoute = require("./routes/userRoute").router;
+const groupRoute = require("./routes/groupRoute").router;
+const privateMessageRoute = require("./routes/privateMessageRoute").router;
+
+
+
 
 
 const app = express();
@@ -41,6 +46,8 @@ app.use("/api", signupRoute);
 app.use("/api", loginRoute);
 app.use("/api", messageRoute);
 app.use("/api", userRoute);
+app.use("/api", groupRoute);
+app.use("/api", privateMessageRoute);
 
 
 // Database Sync + Start Server

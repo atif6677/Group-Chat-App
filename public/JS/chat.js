@@ -1,30 +1,71 @@
-console.log("✅ chat.js loaded");
+console.log("✅ chat.js loaded successfully");
 
+// --------------------------------------------------
+// GLOBAL VARIABLES
+// --------------------------------------------------
 const token = localStorage.getItem("token");
-const currentUserEmail = localStorage.getItem("email");
 const currentUserId = localStorage.getItem("userId");
-
+const currentUserEmail = localStorage.getItem("email");
+const currentUserName = localStorage.getItem("userName") || "You";
 const apiBase = "http://localhost:3000/api";
-
-const socket = io(window.location.origin, {
-  auth: { token }
-});
 
 // DOM ELEMENTS
 const messagesEl = document.getElementById("chatMessages");
 const formEl = document.getElementById("chatForm");
 const inputEl = document.getElementById("chatInput");
 const sendBtnEl = document.getElementById("sendBtn");
+
 const searchInput = document.getElementById("userSearchInput");
 const searchResultsEl = document.getElementById("userSearchResults");
 
-// STATE
-let currentRoomId = null;
-let currentReceiverEmail = null;
+const groupNameInput = document.getElementById("groupNameInput");
+const createGroupBtn = document.getElementById("createGroupBtn");
+const groupSelect = document.getElementById("groupSelect");
+const joinGroupBtn = document.getElementById("joinGroupBtn");
 
+// STATE
+let currentRoomId = null;        
+let currentReceiverEmail = null;  
+let activeGroupId = null;         
+
+
+// --------------------------------------------------
+// SOCKET.IO INIT
+// --------------------------------------------------
+const socket = io(window.location.origin, {
+  auth: { token }
+});
+
+
+// --------------------------------------------------
 // UTILITY FUNCTIONS
+// --------------------------------------------------
+function appendMessage({ userId, name, text, ts }) {
+  const div = document.createElement("div");
+  div.classList.add(
+    "msg",
+    userId == currentUserId || userId == currentUserEmail
+      ? "msg--me"
+      : "msg--them"
+  );
+
+  div.innerHTML = `
+    <div class="msg__name">${name}</div>
+    <div class="msg__text">${text}</div>
+    <div class="msg__meta">${new Date(ts).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit"
+    })}</div>
+  `;
+
+  messagesEl.append(div);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
 function generateRoomId(email1, email2) {
-  return [email1.trim().toLowerCase(), email2.trim().toLowerCase()].sort().join("_");
+  return [email1.trim().toLowerCase(), email2.trim().toLowerCase()]
+    .sort()
+    .join("_");
 }
 
 async function verifyUserEmail(email) {
@@ -32,33 +73,24 @@ async function verifyUserEmail(email) {
     const res = await axios.get(`${apiBase}/users/search?query=${email}`, {
       headers: { Authorization: "Bearer " + token }
     });
-
     return res.data.users.find(u => u.email === email) || null;
   } catch {
     return null;
   }
 }
 
-function appendMessage({ userId, name, text, ts }) {
-  const div = document.createElement("div");
-  div.classList.add("msg", userId == currentUserId ? "msg--me" : "msg--them");
-  div.innerHTML = `
-    <div class="msg__name">${name}</div>
-    <div class="msg__text">${text}</div>
-    <div class="msg__meta">${new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
-  `;
-  messagesEl.appendChild(div);
-  messagesEl.scrollTop = messagesEl.scrollHeight;
-}
 
-// GROUP CHAT LOAD
-async function loadMessages() {
+// --------------------------------------------------
+// LOAD GLOBAL CHAT
+// --------------------------------------------------
+async function loadGlobalMessages() {
   try {
     const res = await axios.get(`${apiBase}/messages`, {
       headers: { Authorization: "Bearer " + token }
     });
 
     messagesEl.innerHTML = "";
+
     res.data.messages.forEach(msg =>
       appendMessage({
         userId: msg.userId,
@@ -68,62 +100,48 @@ async function loadMessages() {
       })
     );
   } catch (err) {
-    console.error("Failed loading messages:", err);
+    console.error("❌ Global messages load error:", err);
   }
 }
-loadMessages();
 
-// GROUP CHAT SEND
-formEl.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const text = inputEl.value.trim();
-  if (!text) return;
+loadGlobalMessages();
 
-  if (!currentRoomId) {
-    // GROUP CHAT MODE
-    try {
-      await axios.post(`${apiBase}/messages`, {
-        userId: currentUserId,
-        message: text
-      }, {
-        headers: { Authorization: "Bearer " + token }
-      });
 
-      inputEl.value = "";
-      sendBtnEl.disabled = true;
-
-    } catch (err) {
-      console.error("Send failed", err);
-    }
-  } else {
-    // PRIVATE CHAT MODE
-    sendPersonalMessage(text);
-    inputEl.value = "";
-    sendBtnEl.disabled = true;
-  }
-});
-
-// ENABLE / DISABLE SEND BUTTON
-inputEl.addEventListener("input", () => {
-  sendBtnEl.disabled = inputEl.value.trim().length === 0;
-});
-
-// GROUP SOCKET LISTENER
-socket.on("message", (msg) => appendMessage(msg));
-
-// PRIVATE CHAT SYSTEM
+// --------------------------------------------------
+// PERSONAL CHAT — FIXED!
+// --------------------------------------------------
 async function joinPersonalChat(receiverEmail) {
-  if (!currentUserEmail) return alert("Login again, no email found!");
+  activeGroupId = null;   // EXIT group mode
 
-  const valid = await verifyUserEmail(receiverEmail);
-  if (!valid) return alert("❌ User not found!");
+  const validUser = await verifyUserEmail(receiverEmail);
+  if (!validUser) {
+    alert("❌ User not found!");
+    return;
+  }
 
   currentReceiverEmail = receiverEmail;
+
   currentRoomId = generateRoomId(currentUserEmail, receiverEmail);
+  console.log("🟢 Joining personal room:", currentRoomId);
 
   socket.emit("join_room", currentRoomId);
+
+  // LOAD PRIVATE HISTORY
+  const history = await axios.get(
+    `${apiBase}/private/messages?roomId=${currentRoomId}`,
+    { headers: { Authorization: "Bearer " + token } }
+  );
+
   messagesEl.innerHTML = "";
-  console.log("🔵 Joined private room:", currentRoomId);
+
+  history.data.messages.forEach(m => {
+    appendMessage({
+      userId: m.senderEmail,
+      name: m.senderEmail === currentUserEmail ? "You" : m.senderEmail,
+      text: m.message,
+      ts: new Date(m.createdAt).getTime()
+    });
+  });
 }
 
 function sendPersonalMessage(text) {
@@ -133,8 +151,9 @@ function sendPersonalMessage(text) {
     receiverEmail: currentReceiverEmail,
     message: text
   });
-}
 
+  // DO NOT append manually (avoid duplicates)
+}
 
 socket.on("new_message", (msg) => {
   appendMessage({
@@ -146,38 +165,167 @@ socket.on("new_message", (msg) => {
 });
 
 
-// SEARCH SYSTEM
-async function searchUsers(query) {
-  if (!query.trim()) {
+// --------------------------------------------------
+// SEARCH USERS
+// --------------------------------------------------
+searchInput?.addEventListener("input", async (e) => {
+  const q = e.target.value.trim();
+
+  if (!q) {
     searchResultsEl.style.display = "none";
     return;
   }
 
-  const res = await axios.get(`${apiBase}/users/search?query=${query}`, {
+  const res = await axios.get(`${apiBase}/users/search?query=${q}`, {
     headers: { Authorization: "Bearer " + token }
   });
 
   const users = res.data.users.filter(u => u.email !== currentUserEmail);
 
-  if (users.length === 0) {
-    searchResultsEl.innerHTML = `<div class="user-search__item">No users found</div>`;
-  } else {
-    searchResultsEl.innerHTML = users
-      .map(u => `<div class="user-search__item" data-email="${u.email}">${u.name} (${u.email})</div>`)
-      .join("");
-  }
+  searchResultsEl.innerHTML = users.length
+    ? users
+        .map(u => `<div class="user-search__item" data-email="${u.email}">
+              ${u.name} (${u.email})
+           </div>`)
+        .join("")
+    : `<div class="user-search__item">No users found</div>`;
 
   searchResultsEl.style.display = "block";
+});
+
+searchResultsEl?.addEventListener("click", async (e) => {
+  const email = e.target.dataset.email;
+  if (!email) return;
+
+  await joinPersonalChat(email);
+
+  searchInput.value = "";
+  searchResultsEl.style.display = "none";
+});
+
+
+// --------------------------------------------------
+// GROUP CHAT
+// --------------------------------------------------
+async function loadGroups() {
+  const res = await axios.get(`${apiBase}/groups`, {
+    headers: { Authorization: "Bearer " + token }
+  });
+
+  groupSelect.innerHTML = `<option value="">-- Select Group --</option>`;
+
+  res.data.groups.forEach(g => {
+    const opt = document.createElement("option");
+    opt.value = g.id;
+    opt.textContent = g.name;
+    groupSelect.append(opt);
+  });
 }
 
-searchInput.addEventListener("input", e => searchUsers(e.target.value));
+loadGroups();
 
-searchResultsEl.addEventListener("click", async (e) => {
-  if (e.target.classList.contains("user-search__item")) {
-    const email = e.target.dataset.email;
-    await joinPersonalChat(email);
+createGroupBtn?.addEventListener("click", async () => {
+  const name = groupNameInput.value.trim();
+  if (!name) return alert("Enter a group name");
 
-    searchResultsEl.style.display = "none";
-    searchInput.value = "";
+  try {
+    await axios.post(
+      `${apiBase}/groups`,
+      { name },
+      { headers: { Authorization: "Bearer " + token } }
+    );
+
+    groupNameInput.value = "";
+    await loadGroups();
+    alert("Group created!");
+  } catch {
+    alert("Failed to create group");
   }
 });
+
+joinGroupBtn?.addEventListener("click", async () => {
+  const groupId = groupSelect.value;
+  if (!groupId) return alert("Select a group");
+
+  activeGroupId = groupId;
+  currentRoomId = null;   // disable direct chat mode
+
+  socket.emit("join_group", groupId);
+
+  const res = await axios.get(`${apiBase}/groups/${groupId}/messages`, {
+    headers: { Authorization: "Bearer " + token }
+  });
+
+  messagesEl.innerHTML = "";
+
+  res.data.messages.forEach(m =>
+    appendMessage({
+      userId: m.senderId,
+      name: m.senderName,
+      text: m.text,
+      ts: new Date(m.createdAt).getTime()
+    })
+  );
+});
+
+socket.on("group_message", (msg) => {
+  appendMessage({
+    userId: msg.senderId,
+    name: msg.senderName,
+    text: msg.text,
+    ts: msg.ts
+  });
+});
+
+
+// --------------------------------------------------
+// SEND MESSAGE
+// --------------------------------------------------
+formEl.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const text = inputEl.value.trim();
+  if (!text) return;
+
+  // GROUP CHAT
+  if (activeGroupId) {
+    socket.emit("group_message", {
+      groupId: activeGroupId,
+      senderId: currentUserId,
+      text
+    });
+
+    inputEl.value = "";
+    sendBtnEl.disabled = true;
+    return;
+  }
+
+  // PERSONAL CHAT
+  if (currentRoomId) {
+    sendPersonalMessage(text);
+    inputEl.value = "";
+    sendBtnEl.disabled = true;
+    return;
+  }
+
+  // GLOBAL CHAT
+  try {
+    await axios.post(
+      `${apiBase}/messages`,
+      { userId: currentUserId, message: text },
+      { headers: { Authorization: "Bearer " + token } }
+    );
+  } catch {
+    console.error("Global message send failed");
+  }
+
+  inputEl.value = "";
+  sendBtnEl.disabled = true;
+});
+
+// Enable/disable Send BTN
+inputEl.addEventListener("input", () => {
+  sendBtnEl.disabled = inputEl.value.trim().length === 0;
+});
+
+// Global chat socket listener
+socket.on("message", (msg) => appendMessage(msg));
