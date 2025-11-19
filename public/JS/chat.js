@@ -94,87 +94,79 @@ formEl.addEventListener("submit", async (e) => {
 // 🔥 PERSONAL CHAT SYSTEM BELOW
 // ======================================================
 
-// ====== JOIN PERSONAL ROOM ======
-function joinPersonalRoom(otherUserId) {
-  const roomId = [currentUserId, otherUserId].sort().join("_");
+
+// Create unique room from two emails
+function createRoomId(email1, email2) {
+  return [email1, email2].sort().join("_");
+}
+
+// Selected room state
+let activeRoomId = null;
+let activeReceiverEmail = null;
+
+// Join a personal room
+function joinPersonalRoom(receiverEmail) {
+  const myEmail = localStorage.getItem("email");
+  const roomId = createRoomId(myEmail, receiverEmail);
+
+  activeRoomId = roomId;
+  activeReceiverEmail = receiverEmail;
+
   socket.emit("join_room", roomId);
-  console.log("🔵 Joined personal room:", roomId);
+  console.log("🔵 Joined Personal Room:", roomId);
+
+  // Clear old chat UI for new private chat
+  messagesEl.innerHTML = "";
   return roomId;
 }
 
-function sendPersonalMessage(roomId, receiverId, text) {
+// Send personal message
+function sendPersonalMessage(text) {
+  if (!activeRoomId || !activeReceiverEmail) {
+    console.warn("❌ No personal room selected.");
+    return;
+  }
+
   socket.emit("new_message", {
-    roomId,
-    senderId: currentUserId,
-    receiverId,
-    message: text
+    roomId: activeRoomId,
+    senderEmail: localStorage.getItem("email"),
+    receiverEmail: activeReceiverEmail,
+    message: text,
+  });
+
+  // Show your own message instantly
+  appendMessage({
+    userId: currentUserId,
+    name: "You",
+    text,
+    ts: Date.now()
   });
 }
 
-// ====== RECEIVE PERSONAL MESSAGE ======
-socket.on("receive_message", (msg) => {
-  console.log("📨 Personal message received:", msg);
+// Listen for incoming private messages
+socket.on("new_message", (msg) => {
+  console.log("📩 Private Message Received:", msg);
+
   appendMessage({
     userId: msg.senderId,
-    name: msg.senderId == currentUserId ? "You" : "User " + msg.senderId,
+    name: msg.senderEmail,
     text: msg.message,
     ts: msg.ts
   });
 });
 
-// ======================================================
-// 🔍 USER SEARCH SYSTEM
-// ======================================================
+// ===============================
+// SEARCH USER → JOIN ROOM
+// ===============================
 
-// ====== Search users API ======
-async function searchUsers(query) {
-  if (!query.trim()) {
-    searchResultsEl.style.display = "none";
-    return;
-  }
-
-  try {
-    const res = await axios.get(`${apiBase}/users/search?query=${query}`, {
-      headers: { Authorization: "Bearer " + token }
-    });
-
-    const users = res.data.users.filter(u => u.id != currentUserId);
-
-    renderSearchResults(users);
-  } catch (err) {
-    console.error("User search failed:", err);
-  }
-}
-
-// ====== Render dropdown ======
-function renderSearchResults(users) {
-  if (users.length === 0) {
-    searchResultsEl.innerHTML = `<div class="user-search__item">No users found</div>`;
-  } else {
-    searchResultsEl.innerHTML = users
-      .map(u => `<div class="user-search__item" data-id="${u.id}" data-name="${u.name}">${u.name}</div>`)
-      .join("");
-  }
-
-  searchResultsEl.style.display = "block";
-}
-
-// ====== Search bar input listener ======
-searchInput.addEventListener("input", (e) => {
-  searchUsers(e.target.value);
-});
-
-// ====== When clicking a user from dropdown ======
+// handle click on search result
 searchResultsEl.addEventListener("click", (e) => {
-  if (!e.target.classList.contains("user-search__item")) return;
+  if (e.target.classList.contains("user-search__item")) {
+    const receiverEmail = e.target.dataset.email;
 
-  const otherUserId = e.target.dataset.id;
-  const otherUserName = e.target.dataset.name;
+    joinPersonalRoom(receiverEmail);
 
-  const roomId = joinPersonalRoom(otherUserId);
-
-  alert(`Starting chat with ${otherUserName}`);
-
-  searchResultsEl.style.display = "none";
-  searchInput.value = "";
+    searchResultsEl.style.display = "none";
+    searchInput.value = "";
+  }
 });

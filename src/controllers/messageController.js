@@ -12,7 +12,6 @@ exports.addMessage = async (req, res) => {
     }
 
     const newMsg = await Message.create({ userId, message });
-
     const user = await User.findByPk(userId);
 
     const payload = {
@@ -26,6 +25,7 @@ exports.addMessage = async (req, res) => {
     req.io.emit("message", payload);
 
     res.status(201).json({ message: "Message saved", chat: newMsg });
+
   } catch (err) {
     console.error("Error saving message:", err);
     res.status(500).json({ error: "Failed to save message" });
@@ -40,6 +40,7 @@ exports.getAllMessages = async (req, res) => {
     });
 
     res.status(200).json({ messages });
+
   } catch (err) {
     console.error("Error fetching messages:", err);
     res.status(500).json({ error: "Failed to fetch messages" });

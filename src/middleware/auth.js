@@ -1,28 +1,25 @@
-//src/middleware/auth.js
-
-
-
 const jwt = require("jsonwebtoken");
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
 exports.auth = (req, res, next) => {
   const token = req.header("Authorization");
-  if (!token)
+
+  if (!token) {
     return res.status(401).json({ error: "Access denied. No token provided." });
+  }
 
   try {
-    const bearer = token.split(" ");
-    if (bearer.length !== 2 || bearer[0] !== "Bearer") {
+    const parts = token.split(" ");
+    if (parts[0] !== "Bearer" || parts.length !== 2) {
       return res.status(401).json({ error: "Invalid token format" });
     }
 
-    const decoded = jwt.verify(bearer[1], JWT_SECRET);
-    req.user = decoded;
+    const payload = jwt.verify(parts[1], JWT_SECRET);
+    req.user = payload;
+
     next();
-  } catch {
+  } catch (err) {
     res.status(400).json({ error: "Invalid token" });
   }
 };
-
-

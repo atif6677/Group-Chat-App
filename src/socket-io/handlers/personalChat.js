@@ -1,3 +1,4 @@
+//src/socket-io/handlers/personalChat.js
 exports.personalChatEvents = (socket, io) => {
 
   // Join a personal room
@@ -7,17 +8,18 @@ exports.personalChatEvents = (socket, io) => {
   });
 
   // Handle personal message
-  socket.on("new_message", ({ roomId, senderId, receiverId, message }) => {
+  socket.on("new_message", ({ roomId, senderEmail, receiverEmail, message }) => {
+
     const payload = {
       roomId,
-      senderId,
-      receiverId,
+      senderEmail,
+      receiverEmail,
       message,
       ts: Date.now()
     };
 
-    // Emit only to this room
-    io.to(roomId).emit("receive_message", payload);
+    // Send only to people in the room
+    io.to(roomId).emit("new_message", payload);
   });
-
 };
+

@@ -1,4 +1,4 @@
-// src/controllers/loginController.js
+//src/controllers/loginController.js
 
 const { User } = require("../models/signupModel");
 const bcrypt = require("bcrypt");
@@ -28,9 +28,11 @@ exports.loginUser = async (req, res) => {
       return res.status(400).json({ error: "Invalid credentials (wrong password)" });
     }
 
-    const token = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, {
-      expiresIn: "1h",
-    });
+    const token = jwt.sign(
+      { userId: user.id, email: user.email },
+      JWT_SECRET,
+      { expiresIn: "1h" }
+    );
 
     res.status(200).json({
       message: "Login successful",
@@ -38,6 +40,7 @@ exports.loginUser = async (req, res) => {
       userId: user.id,
       name: user.name,
     });
+
   } catch (error) {
     console.error("Login error:", error);
     res.status(500).json({ error: "Internal server error" });

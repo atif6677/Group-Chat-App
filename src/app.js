@@ -13,6 +13,8 @@ const { db } = require("./utils/database");
 const signupRoute = require("./routes/signupRoute").router;
 const loginRoute = require("./routes/loginRoute").router;
 const messageRoute = require("./routes/messageRoute").router;
+const userRoute = require("./routes/userRoute").router;
+
 
 const app = express();
 const server = http.createServer(app);
@@ -38,6 +40,8 @@ app.use(express.static(path.join(__dirname, "..", "public")));
 app.use("/api", signupRoute);
 app.use("/api", loginRoute);
 app.use("/api", messageRoute);
+app.use("/api", userRoute);
+
 
 // Database Sync + Start Server
 async function startServer() {
