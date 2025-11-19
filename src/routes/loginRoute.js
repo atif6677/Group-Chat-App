@@ -1,5 +1,6 @@
 // src/routes/loginRoute.js
 
+
 const express = require("express");
 const router = express.Router();
 const login = require("../controllers/loginController");
@@ -7,3 +8,4 @@ const login = require("../controllers/loginController");
 router.post("/login", login.loginUser);
 
 exports.router = router;
+

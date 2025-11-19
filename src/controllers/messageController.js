@@ -1,12 +1,13 @@
 // src/controllers/messageController.js
-const Message = require("../models/messageModel");
-const User = require("../models/signupModel");
+
+const { Message } = require("../models/messageModel");
+const { User } = require("../models/signupModel");
 
 exports.addMessage = async (req, res) => {
   try {
     const { userId, message } = req.body;
 
-    if (!userId || !message.trim()) {
+    if (!userId || !message?.trim()) {
       return res.status(400).json({ error: "userId and message are required" });
     }
 
@@ -14,7 +15,7 @@ exports.addMessage = async (req, res) => {
 
     const user = await User.findByPk(userId);
 
-    const socketPayload = {
+    const payload = {
       id: newMsg.id,
       userId: newMsg.userId,
       name: user?.name || "User",
@@ -22,10 +23,9 @@ exports.addMessage = async (req, res) => {
       ts: new Date(newMsg.createdAt).getTime(),
     };
 
-    req.io.emit("message", socketPayload);
+    req.io.emit("message", payload);
 
     res.status(201).json({ message: "Message saved", chat: newMsg });
-
   } catch (err) {
     console.error("Error saving message:", err);
     res.status(500).json({ error: "Failed to save message" });
@@ -38,6 +38,7 @@ exports.getAllMessages = async (req, res) => {
       include: [{ model: User, attributes: ["name", "email"] }],
       order: [["createdAt", "ASC"]],
     });
+
     res.status(200).json({ messages });
   } catch (err) {
     console.error("Error fetching messages:", err);

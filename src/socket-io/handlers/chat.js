@@ -1,5 +1,6 @@
 // src/socket-io/handlers/chat.js
 
+
 exports.chatEvents = (socket, io) => {
   socket.on("sendMessage", (msg) => {
     io.emit("message", msg);
@@ -9,3 +10,4 @@ exports.chatEvents = (socket, io) => {
     console.log("User disconnected:", socket.id);
   });
 };
+

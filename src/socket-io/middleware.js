@@ -16,3 +16,4 @@ exports.authMiddleware = (socket, next) => {
     next(new Error("Invalid token"));
   }
 };
+

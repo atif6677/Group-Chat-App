@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="CSS/chat.css" />
 </head>
 <body>
+
   <div class="chat">
     <header class="chat__header">
       <div class="chat__room">
@@ -15,6 +16,12 @@
           <div class="chat__title">Group Chat</div>
           <div class="chat__subtitle">12 members • online now</div>
         </div>
+      </div>
+
+      <!-- 🔍 USER SEARCH BAR -->
+      <div class="user-search">
+        <input id="userSearchInput" type="text" placeholder="Search user to start private chat..." />
+        <div id="userSearchResults" class="user-search__results"></div>
       </div>
     </header>
 
@@ -26,18 +33,15 @@
 
     <footer class="chat__composer">
       <form id="chatForm" autocomplete="off">
-  <textarea id="chatInput" rows="1" placeholder="Type a message"></textarea>
-  <button id="sendBtn" type="submit" disabled>Send</button>
-</form>
-
+        <textarea id="chatInput" rows="1" placeholder="Type a message"></textarea>
+        <button id="sendBtn" type="submit" disabled>Send</button>
+      </form>
     </footer>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="/socket.io/socket.io.js"></script> 
+  <script src="JS/chat.js"></script>
 
-<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-
-<script src="/socket.io/socket.io.js"></script> 
-
-<script src="JS/chat.js"></script>
 </body>
 </html>

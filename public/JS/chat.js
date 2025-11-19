@@ -1,101 +1,180 @@
 console.log("✅ chat.js loaded successfully");
 
-// 1. Get the token from local storage (saved during login)
-const token = localStorage.getItem("token"); 
-
-// 2. Initialize Socket.io with the token in the 'auth' object
-const socket = io(window.location.origin, {
-    auth: {
-        token: token // This sends the token to the backend during the handshake
-    }
-});
-
-
+// ====== AUTH ======
+const token = localStorage.getItem("token");
+const currentUserId = localStorage.getItem("userId");
+const currentUserName = localStorage.getItem("userName") || "You";
 
 const apiBase = "http://localhost:3000/api";
-const currentUserId = localStorage.getItem('userId');
-const currentUserName = localStorage.getItem('userName') || "You";
 
-const messagesEl = document.getElementById('chatMessages');
-const formEl = document.getElementById('chatForm');
-const inputEl = document.getElementById('chatInput');
-const sendBtnEl = document.getElementById('sendBtn');
-
-// === Enable/Disable Send button ===
-inputEl.addEventListener('input', () => {
-  const hasText = inputEl.value.trim().length > 0;
-  sendBtnEl.disabled = !hasText;
+// ====== SOCKET.IO INIT ======
+const socket = io(window.location.origin, {
+  auth: { token }
 });
 
-// === Append a message to the chat window ===
+// ====== ELEMENTS ======
+const messagesEl = document.getElementById("chatMessages");
+const formEl = document.getElementById("chatForm");
+const inputEl = document.getElementById("chatInput");
+const sendBtnEl = document.getElementById("sendBtn");
+
+const searchInput = document.getElementById("userSearchInput");
+const searchResultsEl = document.getElementById("userSearchResults");
+
+// ====== SEND BUTTON ENABLE/DISABLE ======
+inputEl.addEventListener("input", () => {
+  sendBtnEl.disabled = inputEl.value.trim().length === 0;
+});
+
+// ====== APPEND MESSAGE TO UI ======
 function appendMessage({ userId, name, text, ts }) {
-  const div = document.createElement('div');
-  div.classList.add('msg', userId == currentUserId ? 'msg--me' : 'msg--them');
+  const div = document.createElement("div");
+  div.classList.add("msg", userId == currentUserId ? "msg--me" : "msg--them");
 
-  const nameEl = document.createElement('div');
-  nameEl.className = 'msg__name';
-  nameEl.textContent = name;
+  div.innerHTML = `
+    <div class="msg__name">${name}</div>
+    <div class="msg__text">${text}</div>
+    <div class="msg__meta">${new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
+  `;
 
-  const textEl = document.createElement('div');
-  textEl.className = 'msg__text';
-  textEl.textContent = text;
-
-  const metaEl = document.createElement('div');
-  metaEl.className = 'msg__meta';
-  const time = new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  metaEl.textContent = time;
-
-  div.append(nameEl, textEl, metaEl);
   messagesEl.appendChild(div);
   messagesEl.scrollTop = messagesEl.scrollHeight;
 }
 
-// === Load existing messages from DB (Run once on load) ===
+// ====== LOAD GROUP MESSAGES ======
 async function loadMessages() {
   try {
-    const res = await axios.get(`${apiBase}/messages`);
+    const res = await axios.get(`${apiBase}/messages`, {
+      headers: { Authorization: "Bearer " + token }
+    });
+
     const allMessages = res.data.messages.map((msg) => ({
       id: msg.id,
       userId: msg.userId,
       name: msg.User?.name || "User",
       text: msg.message,
-      ts: new Date(msg.createdAt).getTime(),
+      ts: new Date(msg.createdAt).getTime()
     }));
-    messagesEl.innerHTML = ""; 
-    allMessages.forEach((m) => appendMessage(m));
+
+    messagesEl.innerHTML = "";
+    allMessages.forEach(appendMessage);
   } catch (err) {
     console.error("❌ Error fetching messages:", err);
   }
 }
+
 loadMessages();
 
-// 2. LISTEN for new messages via Socket.io (Replaces setInterval)
+// ====== RECEIVE GROUP MESSAGE ======
 socket.on("message", (msg) => {
-    // Append the message received from the server
-    appendMessage(msg);
+  appendMessage(msg);
 });
 
-// === Handle new message submission ===
-formEl.addEventListener('submit', async (e) => {
+// ====== SEND GROUP MESSAGE ======
+formEl.addEventListener("submit", async (e) => {
   e.preventDefault();
+
   const text = inputEl.value.trim();
   if (!text) return;
 
   try {
-    // Send message to backend via API
-    await axios.post(`${apiBase}/messages`, {
-      userId: currentUserId,
-      message: text,
-    });
+    await axios.post(`${apiBase}/messages`,
+      { userId: currentUserId, message: text },
+      { headers: { Authorization: "Bearer " + token } }
+    );
 
-    // NOTE: We do NOT manually appendMessage() here anymore.
-    // The server will receive the POST, save it, and EMIT the socket event.
-    // The socket.on('message') listener above will handle displaying it.
-    
-    // Reset input
     inputEl.value = "";
     sendBtnEl.disabled = true;
   } catch (err) {
     console.error("❌ Failed to send message:", err.response?.data || err);
   }
+});
+
+// ======================================================
+// 🔥 PERSONAL CHAT SYSTEM BELOW
+// ======================================================
+
+// ====== JOIN PERSONAL ROOM ======
+function joinPersonalRoom(otherUserId) {
+  const roomId = [currentUserId, otherUserId].sort().join("_");
+  socket.emit("join_room", roomId);
+  console.log("🔵 Joined personal room:", roomId);
+  return roomId;
+}
+
+function sendPersonalMessage(roomId, receiverId, text) {
+  socket.emit("new_message", {
+    roomId,
+    senderId: currentUserId,
+    receiverId,
+    message: text
+  });
+}
+
+// ====== RECEIVE PERSONAL MESSAGE ======
+socket.on("receive_message", (msg) => {
+  console.log("📨 Personal message received:", msg);
+  appendMessage({
+    userId: msg.senderId,
+    name: msg.senderId == currentUserId ? "You" : "User " + msg.senderId,
+    text: msg.message,
+    ts: msg.ts
+  });
+});
+
+// ======================================================
+// 🔍 USER SEARCH SYSTEM
+// ======================================================
+
+// ====== Search users API ======
+async function searchUsers(query) {
+  if (!query.trim()) {
+    searchResultsEl.style.display = "none";
+    return;
+  }
+
+  try {
+    const res = await axios.get(`${apiBase}/users/search?query=${query}`, {
+      headers: { Authorization: "Bearer " + token }
+    });
+
+    const users = res.data.users.filter(u => u.id != currentUserId);
+
+    renderSearchResults(users);
+  } catch (err) {
+    console.error("User search failed:", err);
+  }
+}
+
+// ====== Render dropdown ======
+function renderSearchResults(users) {
+  if (users.length === 0) {
+    searchResultsEl.innerHTML = `<div class="user-search__item">No users found</div>`;
+  } else {
+    searchResultsEl.innerHTML = users
+      .map(u => `<div class="user-search__item" data-id="${u.id}" data-name="${u.name}">${u.name}</div>`)
+      .join("");
+  }
+
+  searchResultsEl.style.display = "block";
+}
+
+// ====== Search bar input listener ======
+searchInput.addEventListener("input", (e) => {
+  searchUsers(e.target.value);
+});
+
+// ====== When clicking a user from dropdown ======
+searchResultsEl.addEventListener("click", (e) => {
+  if (!e.target.classList.contains("user-search__item")) return;
+
+  const otherUserId = e.target.dataset.id;
+  const otherUserName = e.target.dataset.name;
+
+  const roomId = joinPersonalRoom(otherUserId);
+
+  alert(`Starting chat with ${otherUserName}`);
+
+  searchResultsEl.style.display = "none";
+  searchInput.value = "";
 });
