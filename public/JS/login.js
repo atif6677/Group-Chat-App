@@ -24,6 +24,8 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('userId', res.data.userId);
       localStorage.setItem('userName', res.data.name);
+      localStorage.setItem("email", res.data.userEmail);
+
 
       setTimeout(() => (location.href = 'chat.html'), 1500);
     } else {

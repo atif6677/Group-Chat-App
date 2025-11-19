@@ -39,6 +39,7 @@ exports.loginUser = async (req, res) => {
       token,
       userId: user.id,
       name: user.name,
+      userEmail: user.email
     });
 
   } catch (error) {

@@ -18,18 +18,14 @@
         </div>
       </div>
 
-      <!-- 🔍 USER SEARCH BAR -->
+      <!-- USER SEARCH FIELD -->
       <div class="user-search">
-        <input id="userSearchInput" type="text" placeholder="Search user to start private chat..." />
+        <input id="userSearchInput" type="text" placeholder="Search user by email…" />
         <div id="userSearchResults" class="user-search__results"></div>
       </div>
     </header>
 
-    <main class="chat__messages" id="chatMessages" aria-live="polite"></main>
-
-    <div class="chat__new-indicator" id="newIndicator" hidden>
-      New messages • <button id="jumpToBottom" class="btn-link">Jump</button>
-    </div>
+    <main class="chat__messages" id="chatMessages"></main>
 
     <footer class="chat__composer">
       <form id="chatForm" autocomplete="off">
@@ -40,7 +36,7 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-  <script src="/socket.io/socket.io.js"></script> 
+  <script src="/socket.io/socket.io.js"></script>
   <script src="JS/chat.js"></script>
 
 </body>
