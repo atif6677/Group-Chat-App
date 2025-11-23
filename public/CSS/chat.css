@@ -105,3 +105,37 @@ body{
   .sidebar { width:100%; height:auto; order:2; }
   .chat { order:1; height:60vh; }
 }
+/* AI Suggestions Box */
+.ai-suggestions {
+  display: flex;
+  gap: 8px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--border);
+  background: #0f141f;
+  overflow-x: auto;
+  scrollbar-width: none; 
+}
+.ai-suggestions::-webkit-scrollbar { display:none; }
+
+.ai-suggestion {
+  padding: 8px 14px;
+  background: #1b2335;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 18px;
+  white-space: nowrap;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s, border 0.15s;
+  font-size: 13px;
+  user-select: none;
+}
+
+.ai-suggestion:hover {
+  background: #273047;
+  border-color: rgba(255,255,255,0.13);
+}
+
+.ai-suggestion:active {
+  background: #2b63ff33;
+  border-color: #2b63ff66;
+}

@@ -1,6 +1,8 @@
-console.log("✅ chat.js loaded (Media Sharing Enabled)");
+console.log("✅ chat.js loaded (Media + AI Enabled)");
 
-// config + state
+// ==========================================
+//  CONFIG & STATE
+// ==========================================
 const apiBase = "/api";
 const token = localStorage.getItem("token");
 const currentUserId = localStorage.getItem("userId");
@@ -17,7 +19,9 @@ let currentRoomId = null;    // personal room (email_email)
 let activeGroupUuid = null;  // group room
 let currentReceiver = null;  // {name,email}
 
-// DOM Elements
+// ==========================================
+//  DOM ELEMENTS
+// ==========================================
 const meNameEl = document.getElementById("meName");
 const sidebarSearch = document.getElementById("sidebarSearch");
 const usersList = document.getElementById("usersList");
@@ -33,33 +37,98 @@ const sendBtn = document.getElementById("sendBtn");
 const createGroupBtnSmall = document.getElementById("createGroupBtnSmall");
 const logoutBtn = document.getElementById("logoutBtn");
 
-// Media Elements
+// Media & AI Elements
 const attachBtn = document.getElementById("attachBtn");
 const fileInput = document.getElementById("fileInput");
+const aiSuggestions = document.getElementById("aiSuggestions"); // New AI Container
 
 meNameEl.textContent = currentUserName;
 
-// socket initialization
+// ==========================================
+//  SOCKET INITIALIZATION
+// ==========================================
 const socket = io(window.location.origin, { auth: { token } });
 socket.on("connect", () => console.log("Socket connected:", socket.id));
 
-// helpers
+// ==========================================
+//  HELPERS
+// ==========================================
 const el = (tag, cls) => { const d = document.createElement(tag); if (cls) d.className = cls; return d; };
 const time = ts => new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 const generateRoomId = (a,b) => [a.trim().toLowerCase(), b.trim().toLowerCase()].sort().join("_");
-const clearMessages = () => { chatMessages.innerHTML = ""; };
+
+const clearMessages = () => { 
+  chatMessages.innerHTML = ""; 
+  aiSuggestions.innerHTML = ""; 
+};
 
 // ==========================================
-//  MESSAGE RENDERING (Handles Text & Media)
+//  AI LOGIC (Gemini Integration)
+// ==========================================
+
+// Utility: Prevent calling API on every single keystroke
+function debounce(func, wait) {
+  let timeout;
+  return function(...args) {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func.apply(this, args), wait);
+  };
+}
+
+// Render AI Chips (Suggestions or Replies)
+function renderChips(items, type = "prediction") {
+  aiSuggestions.innerHTML = "";
+  aiSuggestions.style.display = "flex";
+
+  items.forEach(text => {
+    const chip = document.createElement("div");
+    chip.className = "ai-suggestion";
+    chip.textContent = text;
+
+    chip.onclick = () => {
+      if (type === "prediction") {
+        chatInput.value += (chatInput.value.endsWith(" ") ? "" : " ") + text + " ";
+      } else {
+        chatInput.value = text;
+      }
+
+      chatInput.focus();
+      sendBtn.disabled = false;
+      aiSuggestions.innerHTML = "";
+    };
+
+    aiSuggestions.appendChild(chip);
+  });
+}
+
+
+// 1. Predictive Typing Handler
+const handleTyping = debounce(async (e) => {
+  const text = e.target.value;
+  // Only predict if user has typed enough context (3+ chars)
+  if (text.length < 3) return; 
+
+  try {
+    const res = await axios.post(`${apiBase}/ai/predict`, { text });
+    if (res.data.suggestions && res.data.suggestions.length > 0) {
+      renderChips(res.data.suggestions, 'prediction');
+    }
+  } catch (err) {
+    // Silent fail for AI features so it doesn't annoy user
+    console.error("AI Prediction failed:", err.message);
+  }
+}, 600); // Wait 600ms after stop typing before calling API
+
+// ==========================================
+//  MESSAGE RENDERING (Text + Media)
 // ==========================================
 function appendMessage({ senderIdOrEmail, senderName, text, ts }) {
   const isMe = (senderIdOrEmail == currentUserId || senderIdOrEmail == currentUserEmail);
   const div = el("div", "msg " + (isMe ? "msg--me" : "msg--them"));
 
-  // Detect if the text is likely a URL (Simple check)
+  // Check if text is a URL
   const isUrl = text.startsWith("http");
-  
-  // Regex to check file extensions
+  // Simple regex for file extensions
   const isImage = isUrl && (text.match(/\.(jpeg|jpg|gif|png|webp|bmp)$/i) != null);
   const isVideo = isUrl && (text.match(/\.(mp4|webm|ogg|mov)$/i) != null);
 
@@ -70,7 +139,7 @@ function appendMessage({ senderIdOrEmail, senderName, text, ts }) {
   } else if (isVideo) {
     contentHtml = `<video src="${text}" controls class="msg__image"></video>`;
   } else if (isUrl && (text.includes("s3") || text.includes("amazonaws"))) {
-    // Fallback for other files (PDFs, docs)
+    // It's a file URL but not an image/video we can embed
     contentHtml = `<div class="msg__text"><a href="${text}" target="_blank" class="msg__file-link">📄 Download File</a></div>`;
   } else {
     // Standard text message
@@ -90,42 +159,26 @@ function appendMessage({ senderIdOrEmail, senderName, text, ts }) {
 // ==========================================
 //  MEDIA UPLOAD LOGIC
 // ==========================================
+attachBtn.addEventListener("click", () => { fileInput.click(); });
 
-// 1. Trigger Hidden Input
-attachBtn.addEventListener("click", () => {
-  fileInput.click();
-});
-
-// 2. Handle File Selection
 fileInput.addEventListener("change", async (e) => {
   const file = e.target.files[0];
   if (!file) return;
 
-  // Determine Context
-  let context = null;
-  let idOrUuid = null;
-  let receiverEmail = null;
+  let context = null, idOrUuid = null, receiverEmail = null;
 
   if (activeGroupUuid) {
-    context = "group";
-    idOrUuid = activeGroupUuid;
+    context = "group"; idOrUuid = activeGroupUuid;
   } else if (currentRoomId) {
-    context = "private";
-    idOrUuid = currentRoomId;
-    receiverEmail = currentReceiver.email;
+    context = "private"; idOrUuid = currentRoomId; receiverEmail = currentReceiver.email;
   } else {
-    alert("Please select a chat first.");
-    fileInput.value = ""; // Reset so change event works next time
-    return;
+    alert("Please select a chat first."); fileInput.value = ""; return;
   }
 
-  // Prepare Form Data
   const formData = new FormData();
   formData.append("file", file);
   formData.append("context", context);
   formData.append("idOrUuid", idOrUuid);
-  
-  // If private, we might need the receiver email depending on backend logic
   if (receiverEmail) formData.append("receiverEmail", receiverEmail);
 
   // UI Feedback
@@ -134,29 +187,19 @@ fileInput.addEventListener("change", async (e) => {
   attachBtn.disabled = true;
 
   try {
-    // Send to Backend
-    await axios.post(`${apiBase}/upload`, formData, {
-      headers: { "Content-Type": "multipart/form-data" }
-    });
-    
+    await axios.post(`${apiBase}/upload`, formData, { headers: { "Content-Type": "multipart/form-data" } });
     console.log("File uploaded successfully");
-    // Note: We don't manually append the message here. 
-    // The backend will emit a socket event, which triggers 'new_message' or 'group_message' listeners below.
-
   } catch (err) {
     console.error("Upload failed", err);
-    alert("Failed to upload file: " + (err.response?.data?.error || err.message));
+    alert("Failed to upload file.");
   } finally {
-    attachBtn.textContent = originalIcon;
-    attachBtn.disabled = false;
-    fileInput.value = ""; // Reset input
+    attachBtn.textContent = originalIcon; attachBtn.disabled = false; fileInput.value = "";
   }
 });
 
 // ==========================================
-//  LIST & CHAT LOGIC (Standard)
+//  LIST LOADING LOGIC
 // ==========================================
-
 function formatUserItem(user){
   const item = el("div", "list__item");
   item.dataset.email = user.email;
@@ -203,7 +246,6 @@ async function loadGroups(){
 loadUsers();
 loadGroups();
 
-// search debounce
 let searchTimer = null;
 sidebarSearch.addEventListener("input", e => {
   const q = e.target.value.trim();
@@ -211,50 +253,40 @@ sidebarSearch.addEventListener("input", e => {
   searchTimer = setTimeout(() => loadUsers(q), 250);
 });
 
-// click handlers
+// ==========================================
+//  NAVIGATION & CHAT OPENING
+// ==========================================
 usersList.addEventListener("click", ev => {
   const item = ev.target.closest(".list__item");
   if (!item) return;
   const email = item.dataset.email;
-  if (!email) return;
-  const user = { email, name: item.querySelector(".item__title").textContent };
-  openPersonalChat(user).catch(console.error);
+  const name = item.querySelector(".item__title").textContent;
+  openPersonalChat({ email, name }).catch(console.error);
 });
 
 groupsList.addEventListener("click", ev => {
   const item = ev.target.closest(".list__item");
   if (!item) return;
   const uuid = item.dataset.groupUuid;
-  if (!uuid) return;
   const name = item.querySelector(".item__title").textContent;
   openGroupChat({ uuid, name }).catch(console.error);
 });
 
 async function openPersonalChat(user){
-  if (!user || !user.email) return console.warn("invalid user", user);
-
   activeGroupUuid = null;
   currentRoomId = generateRoomId(currentUserEmail, user.email);
   currentReceiver = user;
 
-  if (!currentRoomId || currentRoomId.includes("undefined")) {
-    console.error("Invalid roomId:", currentRoomId);
-    return;
-  }
-
   socket.emit("join_room", currentRoomId);
 
   const displayKey = `roomDisplay_${currentRoomId}`;
-  let displayName = localStorage.getItem(displayKey);
-  if (!displayName) {
-    displayName = `${currentUserName} & ${user.name}`;
-    localStorage.setItem(displayKey, displayName);
-  }
-
+  let displayName = localStorage.getItem(displayKey) || `${currentUserName} & ${user.name}`;
+  
   chatTitle.textContent = displayName;
   chatSubtitle.textContent = user.email;
   chatAvatar.textContent = (user.name||'U').slice(0,1).toUpperCase();
   backBtn.hidden = false;
+  aiSuggestions.innerHTML = ""; // Reset chips
 
   try {
     const res = await axios.get(`${apiBase}/private/messages?roomId=${encodeURIComponent(currentRoomId)}`);
@@ -271,7 +303,6 @@ async function openPersonalChat(user){
 }
 
 async function openGroupChat(group){
-  if (!group || !group.uuid) return;
   activeGroupUuid = group.uuid;
   currentRoomId = null;
   currentReceiver = null;
@@ -282,6 +313,7 @@ async function openGroupChat(group){
   chatSubtitle.textContent = "";
   chatAvatar.textContent = (group.name||'G').slice(0,1).toUpperCase();
   backBtn.hidden = false;
+  aiSuggestions.innerHTML = ""; // Reset chips
 
   try {
     const res = await axios.get(`${apiBase}/groups/${encodeURIComponent(activeGroupUuid)}/messages`);
@@ -298,63 +330,66 @@ async function openGroupChat(group){
 }
 
 backBtn.addEventListener("click", () => {
-  activeGroupUuid = null;
-  currentRoomId = null;
-  currentReceiver = null;
-  backBtn.hidden = true;
-
-  chatTitle.textContent = "Personal / Group Chat";
-  chatSubtitle.textContent = "";
-  chatAvatar.textContent = "GC";
-
-  loadUsers();
-  loadGroups();
+  activeGroupUuid = null; currentRoomId = null; currentReceiver = null; backBtn.hidden = true;
+  chatTitle.textContent = "Personal / Group Chat"; chatSubtitle.textContent = ""; chatAvatar.textContent = "GC";
+  loadUsers(); loadGroups(); aiSuggestions.innerHTML = "";
   localStorage.setItem("lastChat", JSON.stringify({ mode: "lists" }));
 });
 
-// send
+// ==========================================
+//  SENDING MESSAGES & INPUT HANDLERS
+// ==========================================
+
+// Chat Input Listener: Triggers AI Prediction + Button State
+chatInput.addEventListener("input", (e) => {
+  sendBtn.disabled = e.target.value.trim().length === 0;
+  handleTyping(e); // <--- AI PREDICTION TRIGGER
+});
+
 chatForm.addEventListener("submit", async e => {
   e.preventDefault();
   const text = chatInput.value.trim();
   if (!text) return;
 
-  // group mode
   if (activeGroupUuid) {
     socket.emit("group_message", { groupUuid: activeGroupUuid, senderId: currentUserId, text });
-    chatInput.value = ""; sendBtn.disabled = true;
-    return;
-  }
-
-  // personal mode
-  if (currentRoomId && currentReceiver) {
+  } else if (currentRoomId && currentReceiver) {
     const displayName = localStorage.getItem(`roomDisplay_${currentRoomId}`) || `${currentUserName} & ${currentReceiver.name}`;
-    socket.emit("new_message", {
-      roomId: currentRoomId,
-      senderEmail: currentUserEmail,
-      receiverEmail: currentReceiver.email,
-      message: text,
-      roomDisplay: displayName
-    });
-    chatInput.value = ""; sendBtn.disabled = true;
-    return;
+    socket.emit("new_message", { roomId: currentRoomId, senderEmail: currentUserEmail, receiverEmail: currentReceiver.email, message: text, roomDisplay: displayName });
   }
+  
+  chatInput.value = ""; 
+  sendBtn.disabled = true; 
+  aiSuggestions.innerHTML = ""; // Clear AI suggestions on send
 });
 
-chatInput.addEventListener("input", () => { sendBtn.disabled = chatInput.value.trim().length === 0; });
+// ==========================================
+//  SOCKET LISTENERS & SMART REPLIES
+// ==========================================
 
-// socket listeners
-socket.on("new_message", payload => {
+socket.on("new_message", async payload => {
+  // 1. Notification logic
   if (payload.senderEmail !== currentUserEmail) {
     if (document.visibilityState === "hidden" && window.Notification && Notification.permission === "granted") {
       new Notification(payload.senderName || payload.senderEmail, { body: payload.message });
     }
+
+    // 2. AI SMART REPLY TRIGGER (Only for incoming private messages from others)
+    try {
+      const res = await axios.post(`${apiBase}/ai/reply`, { message: payload.message });
+      if (res.data.replies && res.data.replies.length > 0) {
+        renderChips(res.data.replies, 'reply');
+      }
+    } catch (err) { console.error("AI Reply failed", err.message); }
   }
 
+  // 3. Room Title logic
   if (payload.roomDisplay && currentRoomId && payload.roomId === currentRoomId) {
     localStorage.setItem(`roomDisplay_${payload.roomId}`, payload.roomDisplay);
     chatTitle.textContent = payload.roomDisplay;
   }
 
+  // 4. Render message
   appendMessage({
     senderIdOrEmail: payload.senderEmail,
     senderName: payload.senderName || payload.senderEmail,
@@ -372,19 +407,19 @@ socket.on("group_message", payload => {
   });
 });
 
-// create group
+// ==========================================
+//  MISC
+// ==========================================
 createGroupBtnSmall.addEventListener("click", async () => {
   const name = prompt("Group name:");
   if (!name) return;
   try {
     const res = await axios.post(`${apiBase}/groups`, { name });
-    const group = res.data.group;
     await loadGroups();
-    if (group?.uuid) openGroupChat({ uuid: group.uuid, name: group.name });
+    if (res.data.group?.uuid) openGroupChat({ uuid: res.data.group.uuid, name: res.data.group.name });
   } catch (e) { console.error("create group", e); alert("Failed to create group"); }
 });
 
-// request permission for notifications
 if ("Notification" in window && Notification.permission !== "granted") {
   Notification.requestPermission().catch(()=>{});
 }

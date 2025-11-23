@@ -6,22 +6,29 @@
   <title>Chat App</title>
   <link rel="stylesheet" href="CSS/chat.css" />
 </head>
+
 <body>
   <div class="app">
+
     <!-- SIDEBAR -->
     <aside class="sidebar">
+
+      <!-- My Profile -->
       <header class="sidebar__header">
         <div class="me">
-          <div class="me__avatar">GC</div>
+          <div class="me__avatar" id="meAvatar">GC</div>
           <div class="me__name" id="meName">You</div>
         </div>
       </header>
 
+      <!-- Search Bar -->
       <div class="sidebar__search">
         <input id="sidebarSearch" placeholder="Search people or groups..." />
       </div>
 
+      <!-- People + Groups Lists -->
       <section class="sidebar__lists">
+
         <div class="list-section">
           <h4>People</h4>
           <div id="usersList" class="list"></div>
@@ -31,47 +38,64 @@
           <h4>Groups</h4>
           <div id="groupsList" class="list"></div>
         </div>
+
       </section>
 
+      <!-- Footer Buttons -->
       <footer class="sidebar__footer">
         <button id="createGroupBtnSmall" class="btn">+ Create Group</button>
         <button id="logoutBtn" class="btn">Logout</button>
       </footer>
+
     </aside>
 
     <!-- MAIN CHAT AREA -->
     <main class="chat">
+
+      <!-- Chat Header -->
       <header class="chat__header">
         <button id="backBtn" class="back-btn" title="Back to lists" hidden>←</button>
+
         <div class="chat__meta">
           <div class="chat__avatar" id="chatAvatar">GC</div>
+
           <div class="chat__titles">
             <div id="chatTitle" class="chat__title">Personal / Group Chat</div>
             <div id="chatSubtitle" class="chat__subtitle"></div>
           </div>
         </div>
-        <div class="chat__actions"></div>
       </header>
 
-      <!-- Chat History -->
+      <!-- Chat Messages -->
       <main id="chatMessages" class="chat__messages" aria-live="polite"></main>
 
-      <!-- Input Area -->
+      <!-- ⭐ AI Suggestions (Improved Styled Chips) -->
+      <div id="aiSuggestions" class="ai-suggestions"></div>
+
+      <!-- Composer -->
       <footer class="chat__composer">
         <form id="chatForm" autocomplete="off">
-          <!-- File Upload Controls -->
+
+          <!-- File Upload -->
           <button id="attachBtn" type="button" title="Attach File">📎</button>
           <input type="file" id="fileInput" hidden />
-          
+
+          <!-- Message Input -->
           <textarea id="chatInput" rows="1" placeholder="Type a message"></textarea>
+
+          <!-- Send Button -->
           <button id="sendBtn" type="submit" disabled>Send</button>
         </form>
       </footer>
+
     </main>
+
   </div>
 
+  <!-- Dependencies -->
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
   <script src="/socket.io/socket.io.js"></script>
   <script src="JS/chat.js"></script>
+
 </body>
 </html>
