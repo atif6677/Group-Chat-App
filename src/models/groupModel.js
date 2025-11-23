@@ -1,10 +1,10 @@
-const { db } = require("../utils/database");
+// src/models/groupModel.js
 const { DataTypes } = require("sequelize");
+const { db } = require("../utils/database");
 
-const Group = db.define("Group", {
+exports.Group = db.define("Group", {
   id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+  uuid: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, unique: true },
   name: { type: DataTypes.STRING, allowNull: false },
-  createdBy: { type: DataTypes.INTEGER, allowNull: false } // store userId of creator
+  createdBy: { type: DataTypes.INTEGER, allowNull: false }
 });
-
-exports.Group = Group;

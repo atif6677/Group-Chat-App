@@ -1,11 +1,8 @@
 // src/routes/loginRoute.js
-
-
 const express = require("express");
-const router = express.Router();
 const login = require("../controllers/loginController");
 
+const router = express.Router();
 router.post("/login", login.loginUser);
 
 exports.router = router;
-

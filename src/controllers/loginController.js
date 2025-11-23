@@ -1,5 +1,4 @@
-//src/controllers/loginController.js
-
+// src/controllers/loginController.js
 const { User } = require("../models/signupModel");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
@@ -16,7 +15,7 @@ exports.loginUser = async (req, res) => {
     }
 
     const user = await User.findOne({
-      where: { [Op.or]: [{ email: identifier }, { phone: identifier }] },
+      where: { [Op.or]: [{ email: identifier }, { phone: identifier }] }
     });
 
     if (!user) {
@@ -39,9 +38,9 @@ exports.loginUser = async (req, res) => {
       token,
       userId: user.id,
       name: user.name,
-      userEmail: user.email
+      email: user.email,
+      userEmail: user.email // Added specifically for your frontend logic
     });
-
   } catch (error) {
     console.error("Login error:", error);
     res.status(500).json({ error: "Internal server error" });

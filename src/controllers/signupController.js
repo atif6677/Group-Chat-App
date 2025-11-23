@@ -12,17 +12,16 @@ exports.addUserSignup = async (req, res) => {
       return res.status(400).json({ error: "All fields are required" });
     }
 
+    // Check for existing user
     const existingUser = await User.findOne({
-      where: { [Op.or]: [{ email }, { phone }] },
+      where: { [Op.or]: [{ email }, { phone }] }
     });
 
     if (existingUser) {
-      if (existingUser.email === email) {
+      if (existingUser.email === email)
         return res.status(400).json({ error: "Email already exists" });
-      }
-      if (existingUser.phone === phone) {
+      if (existingUser.phone === phone)
         return res.status(400).json({ error: "Phone number already exists" });
-      }
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -31,19 +30,13 @@ exports.addUserSignup = async (req, res) => {
       name,
       email,
       phone,
-      password: hashedPassword,
+      password: hashedPassword
     });
 
     res.status(201).json({
       message: "New user added successfully",
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-      },
+      user: { id: user.id, name: user.name, email: user.email, phone: user.phone }
     });
-
   } catch (error) {
     console.error("Signup error:", error);
     res.status(500).json({ error: "Server error. Please try again later." });

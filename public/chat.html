@@ -1,43 +1,77 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Chat Window</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Chat App</title>
   <link rel="stylesheet" href="CSS/chat.css" />
 </head>
 <body>
-
-  <div class="chat">
-    <header class="chat__header">
-      <div class="chat__room">
-        <div class="chat__avatar">GC</div>
-        <div>
-          <div class="chat__title">Group Chat</div>
-          <div class="chat__subtitle">12 members • online now</div>
+  <div class="app">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <header class="sidebar__header">
+        <div class="me">
+          <div class="me__avatar">GC</div>
+          <div class="me__name" id="meName">You</div>
         </div>
+      </header>
+
+      <div class="sidebar__search">
+        <input id="sidebarSearch" placeholder="Search people or groups..." />
       </div>
 
-      <!-- USER SEARCH FIELD -->
-      <div class="user-search">
-        <input id="userSearchInput" type="text" placeholder="Search user by email…" />
-        <div id="userSearchResults" class="user-search__results"></div>
-      </div>
-    </header>
+      <section class="sidebar__lists">
+        <div class="list-section">
+          <h4>People</h4>
+          <div id="usersList" class="list"></div>
+        </div>
 
-    <main class="chat__messages" id="chatMessages"></main>
+        <div class="list-section">
+          <h4>Groups</h4>
+          <div id="groupsList" class="list"></div>
+        </div>
+      </section>
 
-    <footer class="chat__composer">
-      <form id="chatForm" autocomplete="off">
-        <textarea id="chatInput" rows="1" placeholder="Type a message"></textarea>
-        <button id="sendBtn" type="submit" disabled>Send</button>
-      </form>
-    </footer>
+      <footer class="sidebar__footer">
+        <button id="createGroupBtnSmall" class="btn">+ Create Group</button>
+        <button id="logoutBtn" class="btn">Logout</button>
+      </footer>
+    </aside>
+
+    <!-- MAIN CHAT AREA -->
+    <main class="chat">
+      <header class="chat__header">
+        <button id="backBtn" class="back-btn" title="Back to lists" hidden>←</button>
+        <div class="chat__meta">
+          <div class="chat__avatar" id="chatAvatar">GC</div>
+          <div class="chat__titles">
+            <div id="chatTitle" class="chat__title">Personal / Group Chat</div>
+            <div id="chatSubtitle" class="chat__subtitle"></div>
+          </div>
+        </div>
+        <div class="chat__actions"></div>
+      </header>
+
+      <!-- Chat History -->
+      <main id="chatMessages" class="chat__messages" aria-live="polite"></main>
+
+      <!-- Input Area -->
+      <footer class="chat__composer">
+        <form id="chatForm" autocomplete="off">
+          <!-- File Upload Controls -->
+          <button id="attachBtn" type="button" title="Attach File">📎</button>
+          <input type="file" id="fileInput" hidden />
+          
+          <textarea id="chatInput" rows="1" placeholder="Type a message"></textarea>
+          <button id="sendBtn" type="submit" disabled>Send</button>
+        </form>
+      </footer>
+    </main>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
   <script src="/socket.io/socket.io.js"></script>
   <script src="JS/chat.js"></script>
-
 </body>
 </html>

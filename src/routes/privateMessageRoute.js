@@ -1,7 +1,9 @@
+// src/routes/privateMessageRoute.js
 const express = require("express");
-const router = express.Router();
 const { PrivateMessage } = require("../models/privateMessageModel");
 const { auth } = require("../middleware/auth");
+
+const router = express.Router();
 
 router.get("/private/messages", auth, async (req, res) => {
   try {

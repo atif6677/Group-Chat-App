@@ -1,11 +1,13 @@
+// src/routes/groupRoute.js
 const express = require("express");
-const router = express.Router();
 const { Group } = require("../models/groupModel");
 const { GroupMessage } = require("../models/groupMessageModel");
 const { User } = require("../models/signupModel");
 const { auth } = require("../middleware/auth");
 
-// Create a group
+const router = express.Router();
+
+// Create group
 router.post("/groups", auth, async (req, res) => {
   try {
     const { name } = req.body;
@@ -19,7 +21,7 @@ router.post("/groups", auth, async (req, res) => {
   }
 });
 
-// List groups (simple)
+// List groups
 router.get("/groups", auth, async (req, res) => {
   try {
     const groups = await Group.findAll({ order: [["createdAt", "DESC"]] });
@@ -30,16 +32,19 @@ router.get("/groups", auth, async (req, res) => {
   }
 });
 
-// Save and fetch messages for a group (history)
-router.get("/groups/:groupId/messages", auth, async (req, res) => {
+// Get group messages
+router.get("/groups/:uuid/messages", auth, async (req, res) => {
   try {
-    const { groupId } = req.params;
+    const { uuid } = req.params;
+    const group = await Group.findOne({ where: { uuid } });
+    if (!group) return res.status(404).json({ error: "Group not found" });
+
     const messages = await GroupMessage.findAll({
-      where: { groupId },
+      where: { groupId: group.id },
       order: [["createdAt", "ASC"]]
     });
 
-    // Enrich with sender name asynchronously (optional)
+    // Enrich messages with Sender Name
     const enriched = await Promise.all(messages.map(async (m) => {
       const user = await User.findByPk(m.senderId);
       return {

@@ -1,11 +1,10 @@
-const { db } = require("../utils/database");
+// src/models/groupMessageModel.js
 const { DataTypes } = require("sequelize");
+const { db } = require("../utils/database");
 
-const GroupMessage = db.define("GroupMessage", {
+exports.GroupMessage = db.define("GroupMessage", {
   id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
   groupId: { type: DataTypes.INTEGER, allowNull: false },
   senderId: { type: DataTypes.INTEGER, allowNull: false },
   text: { type: DataTypes.TEXT, allowNull: false }
 });
-
-exports.GroupMessage = GroupMessage;

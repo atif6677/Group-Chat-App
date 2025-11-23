@@ -1,5 +1,4 @@
 // src/socket-io/middleware.js
-
 const jwt = require("jsonwebtoken");
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -12,8 +11,8 @@ exports.authMiddleware = (socket, next) => {
     const decoded = jwt.verify(token, JWT_SECRET);
     socket.user = decoded;
     next();
-  } catch {
+  } catch (err) {
+    console.error("Socket auth error:", err?.message || err);
     next(new Error("Invalid token"));
   }
 };
-

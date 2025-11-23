@@ -1,10 +1,10 @@
-//src/routes/userRoute.js
-
+// src/routes/userRoute.js
 const express = require("express");
-const router = express.Router();
 const { User } = require("../models/signupModel");
 const { Op } = require("sequelize");
 const { auth } = require("../middleware/auth");
+
+const router = express.Router();
 
 router.get("/users/search", auth, async (req, res) => {
   const { query } = req.query;
@@ -13,15 +13,17 @@ router.get("/users/search", auth, async (req, res) => {
     return res.json({ users: [] });
   }
 
-  const users = await User.findAll({
-    where: {
-      email: { [Op.like]: `%${query}%` }
-    },
-    attributes: ["id", "name", "email"]
-  });
-
-  res.json({ users });
+  try {
+    const users = await User.findAll({
+      where: {
+        email: { [Op.like]: `%${query}%` }
+      },
+      attributes: ["id", "name", "email"]
+    });
+    res.json({ users });
+  } catch (err) {
+    res.status(500).json({ error: "Search failed" });
+  }
 });
 
 exports.router = router;
-
