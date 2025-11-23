@@ -1,4 +1,3 @@
-// src/app.js
 require("dotenv").config();
 
 const express = require("express");
@@ -13,7 +12,7 @@ const loginRoute = require("./routes/loginRoute").router;
 const userRoute = require("./routes/userRoute").router;
 const groupRoute = require("./routes/groupRoute").router;
 const privateMessageRoute = require("./routes/privateMessageRoute").router;
-const mediaRoute = require("./routes/mediaRoute").router;
+const mediaRoute = require("./routes/mediaRoute").router; // ✅ Import Media Route
 
 const app = express();
 const server = http.createServer(app);
@@ -21,7 +20,7 @@ const server = http.createServer(app);
 // SOCKET.IO INIT
 const io = initSocket(server);
 
-// Attach io to request
+// Attach io to request so controllers can use it
 app.use((req, res, next) => {
   req.io = io;
   next();
@@ -41,7 +40,7 @@ app.use("/api", loginRoute);
 app.use("/api", userRoute);
 app.use("/api", groupRoute);
 app.use("/api", privateMessageRoute);
-app.use("/api", mediaRoute);
+app.use("/api", mediaRoute); // ✅ Register Media Route
 
 // Database Sync + Start Server
 async function startServer() {
